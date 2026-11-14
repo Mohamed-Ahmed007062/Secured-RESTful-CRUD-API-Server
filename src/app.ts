@@ -26,9 +26,14 @@ export function createApp(): Application {
   const app = express();
 
   // 1. Security & Core Middleware
-  const helmetFn = (helmet as any).default || (helmet as any);
-  if (typeof helmetFn === 'function') {
-    app.use(helmetFn());
+  try {
+    // @ts-ignore
+    const helmetFn: any = (helmet as any)?.default || helmet;
+    if (typeof helmetFn === 'function') {
+      app.use(helmetFn());
+    }
+  } catch (err) {
+    console.warn('Helmet setup notice:', err);
   }
 
   app.use(
