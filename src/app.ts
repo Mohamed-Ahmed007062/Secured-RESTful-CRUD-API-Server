@@ -26,7 +26,11 @@ export function createApp(): Application {
   const app = express();
 
   // 1. Security & Core Middleware
-  app.use(helmet());
+  const helmetFn = (helmet as any).default || (helmet as any);
+  if (typeof helmetFn === 'function') {
+    app.use(helmetFn());
+  }
+
   app.use(
     cors({
       origin: env.CORS_ORIGIN === '*' ? '*' : env.CORS_ORIGIN.split(','),
