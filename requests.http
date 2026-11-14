@@ -1,0 +1,129 @@
+### Variable Definitions
+@baseUrl = http://localhost:4000
+@adminEmail = admin@example.com
+@adminPassword = AdminPass123!
+@userEmail = user@example.com
+@userPassword = UserPass123!
+
+### 1. Health Check & Active SQL Connection Ping
+GET {{baseUrl}}/health
+Accept: application/json
+
+### 2. Login as Admin to get Admin JWT
+# @name adminLogin
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### Store Admin Token
+@adminToken = {{adminLogin.response.body.data.token}}
+
+### 3. Login as User to get User JWT
+# @name userLogin
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+### Store User Token
+@userToken = {{userLogin.response.body.data.token}}
+
+### 4. Register a New User (Validation + Password Hash)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "sarah.connor@example.com",
+  "password": "SecurePassword999!",
+  "name": "Sarah Connor",
+  "role": "USER"
+}
+
+### 5. Get Current User Profile (Authenticated)
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{userToken}}
+
+### 6. List Categories (Public / Authenticated with Pagination)
+# @name listCategories
+GET {{baseUrl}}/api/v1/categories?page=1&limit=10
+Accept: application/json
+
+### 7. Create Category (Secured: ADMIN ONLY)
+# @name createCategory
+POST {{baseUrl}}/api/v1/categories
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "AI & Machine Learning",
+  "description": "High-throughput GPU inference and distributed training clusters"
+}
+
+@newCategoryId = {{createCategory.response.body.data.id}}
+
+### 8. List Products with Query Parameters (Filtering, Sorting, Pagination)
+GET {{baseUrl}}/api/v1/products?page=1&limit=10&status=ACTIVE&sortBy=price&sortOrder=asc
+Accept: application/json
+
+### 9. Search Products by keyword
+GET {{baseUrl}}/api/v1/products?search=PostgreSQL
+Accept: application/json
+
+### 10. Create Product (Secured: Authenticated, Relational Validation, Audit Log)
+# @name createProduct
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "title": "NVIDIA H100 Tensor Core GPU",
+  "description": "80GB SXM5 memory-optimized instance with 3.35TB/s bandwidth",
+  "price": 2899.99,
+  "stock": 12,
+  "status": "ACTIVE",
+  "sku": "GPU-NV-H100-01",
+  "categoryId": "{{newCategoryId}}"
+}
+
+@newProductId = {{createProduct.response.body.data.id}}
+
+### 11. Read Single Product by ID (Includes Category & Creator Relational Data)
+GET {{baseUrl}}/api/v1/products/{{newProductId}}
+Accept: application/json
+
+### 12. Update Product (Secured: PUT / PATCH - Creator or Admin Only)
+PATCH {{baseUrl}}/api/v1/products/{{newProductId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "price": 2749.50,
+  "stock": 15
+}
+
+### 13. Test Validation Error (Negative Price & Malformed SKU)
+POST {{baseUrl}}/api/v1/products
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "title": "Invalid Item",
+  "price": -100,
+  "sku": "NO",
+  "categoryId": "invalid-uuid"
+}
+
+### 14. Delete Product (Secured: Creator or Admin Only)
+DELETE {{baseUrl}}/api/v1/products/{{newProductId}}
+Authorization: Bearer {{userToken}}
+
+### 15. Verify Product 404 After Deletion
+GET {{baseUrl}}/api/v1/products/{{newProductId}}
+Accept: application/json

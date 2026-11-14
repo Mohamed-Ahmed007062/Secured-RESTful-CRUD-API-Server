@@ -1,0 +1,90 @@
+// Prisma Schema for Task 2: Secured RESTful CRUD API Server
+// Supporting full relational data modeling, indexing, foreign keys, and secure constraints.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String
+  name         String
+  role         Role       @default(USER)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  products     Product[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String        @id @default(uuid())
+  title       String
+  slug        String        @unique
+  description String?
+  price       Float
+  stock       Int           @default(0)
+  status      ProductStatus @default(DRAFT)
+  sku         String        @unique
+
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  creatorId   String
+  creator     User          @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId])
+  @@index([creatorId])
+  @@index([status])
+  @@map("products")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String   // e.g. "CREATE_PRODUCT", "UPDATE_PRODUCT", "DELETE_PRODUCT"
+  entity    String   // e.g. "Product", "Category", "User"
+  entityId  String
+  details   String?  // JSON string or summary
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
