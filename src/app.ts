@@ -1,6 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -9,6 +8,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 import { env } from './config/env.js';
+import { securityHeaders } from './middleware/securityHeaders.js';
 import { apiRateLimiter } from './middleware/rateLimiter.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { NotFoundError } from './errors/AppError.js';
@@ -25,16 +25,8 @@ const __dirname = path.dirname(__filename);
 export function createApp(): Application {
   const app = express();
 
-  // 1. Security & Core Middleware
-  try {
-    // @ts-ignore
-    const helmetFn: any = (helmet as any)?.default || helmet;
-    if (typeof helmetFn === 'function') {
-      app.use(helmetFn());
-    }
-  } catch (err) {
-    console.warn('Helmet setup notice:', err);
-  }
+  // 1. Security Headers & CORS Middleware
+  app.use(securityHeaders);
 
   app.use(
     cors({
