@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 *.db
+!prisma/template.db
 *.db-journal
 *.log
 coverage/

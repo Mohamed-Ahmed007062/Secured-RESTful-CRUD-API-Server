@@ -2,7 +2,8 @@
 // Supporting full relational data modeling, indexing, foreign keys, and secure constraints.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
