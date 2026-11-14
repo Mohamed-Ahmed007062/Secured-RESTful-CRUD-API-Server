@@ -28,8 +28,9 @@ export function createApp(): Application {
   // 1. Security Headers & CORS Middleware
   app.use(securityHeaders);
 
+  const corsMiddleware: any = (cors as any).default || cors;
   app.use(
-    cors({
+    corsMiddleware({
       origin: env.CORS_ORIGIN === '*' ? '*' : env.CORS_ORIGIN.split(','),
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -38,7 +39,8 @@ export function createApp(): Application {
 
   // 2. Logging
   if (env.NODE_ENV !== 'test') {
-    app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
+    const morganMiddleware: any = (morgan as any).default || morgan;
+    app.use(morganMiddleware(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
   }
 
   // 3. Body Parsing
